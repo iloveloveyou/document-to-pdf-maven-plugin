@@ -1,9 +1,6 @@
-package com.squins.maven.plugin.document.topdf;
-
-import static java.io.File.createTempFile;
+package com.squins.maven.plugin.document.topdf.maven;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,20 +12,15 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.DirectoryScanner;
-import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 
+import com.squins.maven.plugin.document.topdf.maven.officeclient.OfficeClient;
+import com.squins.maven.plugin.document.topdf.maven.officeclient.UnixBasedOfficeClient;
+import com.squins.maven.plugin.document.topdf.maven.officeclient.WindowsOfficeClient;
+
 @Mojo(name = "export")
 public class ExportDocumentToPdfMojo extends AbstractMojo {
-
-    private String executablePath;
-
-    private String libreOfficeProfilePath;
-
-    static final String LIBRE_OFFICE_DEFAULT_EXECUTABLE = "libreoffice";
-
-    final String libreOfficeExecutable;
 
     List<String> includedExtensions = Arrays.asList("odt", "doc", "docx");
 
@@ -38,25 +30,46 @@ public class ExportDocumentToPdfMojo extends AbstractMojo {
     @Parameter(property = "outputDirectory", required = true, defaultValue = "${project.build.outputDirectory}")
     File outputDirectory;
 
+    OfficeClient officeClient;
+
     public ExportDocumentToPdfMojo() {
-	this(LIBRE_OFFICE_DEFAULT_EXECUTABLE);
+	this(null);
+    }
+
+    void determineOfficeClientIfNeeded() {
+	if (officeClient != null) {
+	    return;
+	}
+
+	if (isOsWindows()) {
+	    officeClient = new WindowsOfficeClient(getLog());
+	    return;
+	}
+	officeClient = new UnixBasedOfficeClient(getLog());
+    }
+
+    private static boolean isOsWindows() {
+	return StringUtils.defaultString(System.getProperty("os.name")).toLowerCase().contains("windows");
     }
 
     /**
      * For the Maven plugin, which injects required properties.
      * 
      * @param libreOfficeExecutable
+     * @param officeClient
      */
-    public ExportDocumentToPdfMojo(String libreOfficeExecutable) {
-	this.libreOfficeExecutable = libreOfficeExecutable;
-
-	failOnWindows();
-	createLibreOfficeExecutableWrapper();
-	createLibreOfficeTemporaryUserProfileDirectory();
+    public ExportDocumentToPdfMojo(OfficeClient officeClient) {
+	this.officeClient = officeClient;
     }
 
-    public ExportDocumentToPdfMojo(File documentDirectory, File outputDirectory, String libreOfficeExecutable) {
-	this(libreOfficeExecutable);
+    public ExportDocumentToPdfMojo(File documentDirectory, File outputDirectory, OfficeClient officeClient) {
+	this(officeClient);
+	this.documentDirectory = documentDirectory;
+	this.outputDirectory = outputDirectory;
+    }
+
+    public ExportDocumentToPdfMojo(File documentDirectory, File outputDirectory) {
+	this(null);
 
 	this.documentDirectory = documentDirectory;
 	this.outputDirectory = outputDirectory;
@@ -64,70 +77,10 @@ public class ExportDocumentToPdfMojo extends AbstractMojo {
 
     private void assertLibreOfficeAvailable() throws MojoFailureException {
 	try {
-	    startAndWaitLibreProcess("--help");
+	    officeClient.startAndWaitLibreProcess("--help");
 	} catch (Exception e) {
 	    throw new MojoFailureException("Failed to start libreoffice; is libreoffice executable on your os path?", e);
 	}
-    }
-
-    private ProcessBuilder buildLibreOfficeCommand(String... arguments) {
-
-	List<String> commandWithArgs = new ArrayList<String>(Arrays.asList(executablePath, "--headless"));
-
-	commandWithArgs.addAll(Arrays.asList(arguments));
-
-	commandWithArgs.add("-env:UserInstallation=file://" + libreOfficeProfilePath);
-
-	getLog().info("Creating command: " + StringUtils.join(commandWithArgs.iterator(), " "));
-	return new ProcessBuilder(commandWithArgs);
-    }
-
-    /**
-     * Libreoffice doesn't work when called straight from Java (probably because
-     * of stdout, stderr redirection). Here we create a bash wrapper to vercome
-     * this issue.
-     */
-    private void createLibreOfficeExecutableWrapper() {
-	FileWriter writer = null;
-	try {
-	    File file = createTempFile("DocumentToPdfPluginMojo", "libreofficeexecutableWrapper");
-	    writer = new FileWriter(file);
-	    writer.write(String.format("%s $@ || exit 1", libreOfficeExecutable));
-	    file.setExecutable(true);
-	    file.deleteOnExit();
-	    executablePath = file.getAbsolutePath();
-	} catch (Exception e) {
-	    throw new RuntimeException(e);
-	} finally {
-	    IOUtil.close(writer);
-	}
-    }
-
-    /**
-     * Creates a temporary user profile directory.
-     * <p>
-     * We need to have a unique profile, since Libre office allows only one
-     * concurrent process per user profile.
-     */
-    private void createLibreOfficeTemporaryUserProfileDirectory() {
-	String path = System.getProperty("java.io.tmpdir") + "/loffice_profile" + System.nanoTime();
-	final File file = new File(path);
-	file.mkdir();
-	libreOfficeProfilePath = file.getAbsolutePath();
-
-	Runnable runnable = new Runnable() {
-
-	    @Override
-	    public void run() {
-		try {
-		    FileUtils.deleteDirectory(file);
-		} catch (IOException e) {
-		    throw new RuntimeException(e);
-		}
-	    }
-	};
-
-	Runtime.getRuntime().addShutdownHook(new Thread(runnable));
     }
 
     void handleProcessOutput(Process process) throws IOException {
@@ -142,6 +95,7 @@ public class ExportDocumentToPdfMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+	determineOfficeClientIfNeeded();
 	assertLibreOfficeAvailable();
 	getLog().info("documentDirectory: " + documentDirectory);
 	getLog().info("outputDirectory: " + outputDirectory);
@@ -166,7 +120,7 @@ public class ExportDocumentToPdfMojo extends AbstractMojo {
 
 	File documentOutputDir = determinteOutputDir(relativeFilePath);
 
-	startAndWaitLibreProcess(
+	officeClient.startAndWaitLibreProcess(
 	/* */
 	"--convert-to pdf",
 	/* */
@@ -193,23 +147,5 @@ public class ExportDocumentToPdfMojo extends AbstractMojo {
 
 	String[] ret = new String[includes.size()];
 	return includes.toArray(ret);
-    }
-
-    private void failOnWindows() {
-	if ("Windows".equalsIgnoreCase(System.getProperty("os.name"))) {
-	    throw new RuntimeException("Sorry this tool doesn't work on Windows yet, please vote on the Github issue");
-	}
-    }
-
-    Process startAndWaitLibreProcess(String... arguments) throws Exception {
-	ProcessBuilder builder = buildLibreOfficeCommand(arguments);
-	Process process = builder.start();
-	process.waitFor();
-	handleProcessOutput(process);
-	if (process.exitValue() != 0) {
-	    throw new IllegalStateException("Process returned error exitValue:" + process.exitValue());
-	}
-
-	return process;
     }
 }
