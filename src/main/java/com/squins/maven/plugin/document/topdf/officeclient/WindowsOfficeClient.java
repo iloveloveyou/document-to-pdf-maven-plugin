@@ -1,4 +1,4 @@
-package com.squins.maven.plugin.document.topdf.maven.officeclient;
+package com.squins.maven.plugin.document.topdf.officeclient;
 
 import org.apache.maven.plugin.logging.Log;
 
@@ -10,7 +10,7 @@ public class WindowsOfficeClient extends AbstractOfficeClient {
 
     @Override
     protected String libreOfficeExecutable() {
-	return "\"C:\\Program Files\\LibreOffice 3.6\\program\\soffice.exe\"";
+	return "\"C:\\Program Files\\LibreOffice 3.5\\program\\soffice.exe\"";
     }
 
     @Override

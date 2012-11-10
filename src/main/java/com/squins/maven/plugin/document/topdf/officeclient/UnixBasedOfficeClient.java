@@ -1,4 +1,4 @@
-package com.squins.maven.plugin.document.topdf.maven.officeclient;
+package com.squins.maven.plugin.document.topdf.officeclient;
 
 import org.apache.maven.plugin.logging.Log;
 

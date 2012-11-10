@@ -1,4 +1,4 @@
-package com.squins.maven.plugin.document.topdf.maven;
+package com.squins.maven.plugin.document.topdf;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,9 +15,9 @@ import org.codehaus.plexus.util.DirectoryScanner;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 
-import com.squins.maven.plugin.document.topdf.maven.officeclient.OfficeClient;
-import com.squins.maven.plugin.document.topdf.maven.officeclient.UnixBasedOfficeClient;
-import com.squins.maven.plugin.document.topdf.maven.officeclient.WindowsOfficeClient;
+import com.squins.maven.plugin.document.topdf.officeclient.OfficeClient;
+import com.squins.maven.plugin.document.topdf.officeclient.UnixBasedOfficeClient;
+import com.squins.maven.plugin.document.topdf.officeclient.WindowsOfficeClient;
 
 @Mojo(name = "export")
 public class ExportDocumentToPdfMojo extends AbstractMojo {
@@ -122,7 +122,7 @@ public class ExportDocumentToPdfMojo extends AbstractMojo {
 
 	officeClient.startAndWaitLibreProcess(
 	/* */
-	"--convert-to pdf",
+	"--convert-to", "pdf",
 	/* */
 	inputFile.getAbsolutePath(),
 	/* */

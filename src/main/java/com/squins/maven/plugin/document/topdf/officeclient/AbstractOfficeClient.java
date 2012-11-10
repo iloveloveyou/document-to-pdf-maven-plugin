@@ -1,4 +1,4 @@
-package com.squins.maven.plugin.document.topdf.maven.officeclient;
+package com.squins.maven.plugin.document.topdf.officeclient;
 
 import static java.io.File.createTempFile;
 
@@ -76,11 +76,11 @@ public abstract class AbstractOfficeClient implements OfficeClient {
 
     private ProcessBuilder buildLibreOfficeCommand(String... arguments) {
 
-	List<String> commandWithArgs = new ArrayList<String>(Arrays.asList(executablePath, "--headless", "--nofirststartwizard"));
+	List<String> commandWithArgs = new ArrayList<String>(Arrays.asList(executablePath, "--headless"));
 
 	commandWithArgs.addAll(Arrays.asList(arguments));
 
-	commandWithArgs.add("-env:UserInstallation=file://" + libreOfficeProfilePath);
+//	commandWithArgs.add("-env:UserInstallation=file:///" + libreOfficeProfilePath);
 
 	log.info("Creating command: " + StringUtils.join(commandWithArgs.iterator(), " "));
 	return new ProcessBuilder(commandWithArgs);
@@ -96,6 +96,7 @@ public abstract class AbstractOfficeClient implements OfficeClient {
 	String path = System.getProperty("java.io.tmpdir") + "/loffice_profile" + System.nanoTime();
 	final File file = new File(path);
 	file.mkdir();
+//	libreOfficeProfilePath = path;
 	libreOfficeProfilePath = file.getAbsolutePath();
 
 	Runnable runnable = new Runnable() {

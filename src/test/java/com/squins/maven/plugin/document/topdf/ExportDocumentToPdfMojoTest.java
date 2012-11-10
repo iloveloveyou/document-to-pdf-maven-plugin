@@ -1,4 +1,4 @@
-package com.squins.maven.plugin.document.topdf.maven;
+package com.squins.maven.plugin.document.topdf;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertFalse;
@@ -17,9 +17,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.squins.maven.plugin.document.topdf.maven.officeclient.OfficeClient;
-import com.squins.maven.plugin.document.topdf.maven.officeclient.UnixBasedOfficeClient;
-import com.squins.maven.plugin.document.topdf.maven.officeclient.WindowsOfficeClient;
+import com.squins.maven.plugin.document.topdf.ExportDocumentToPdfMojo;
+import com.squins.maven.plugin.document.topdf.officeclient.OfficeClient;
+import com.squins.maven.plugin.document.topdf.officeclient.UnixBasedOfficeClient;
+import com.squins.maven.plugin.document.topdf.officeclient.WindowsOfficeClient;
 
 
 public class ExportDocumentToPdfMojoTest {
