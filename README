@@ -3,6 +3,17 @@ maven-document-to-pdf-plugin
 
 Creates PDF files from Office documents.
 
+Requires Libre office to be installed.
+
+Works well on Linux, but not on Windows: --headless still starts a popup which needs to be terminated by a user.
+
+For that I stopped working on this project as it seems to be impossible to get this thing to work crossplatform.
+
+If you just want Linux support, it should be easy to use it into your project:
+* Git clone it
+* Release it into your local artifact repository
+* Use it.
+
 Sample configuration:
 <build>
     <plugins>
