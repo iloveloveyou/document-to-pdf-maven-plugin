@@ -88,6 +88,8 @@ public abstract class AbstractOfficeClient implements OfficeClient {
 
 		commandWithArgs.addAll(Arrays.asList(arguments));
 
+		// fixes on Linux: conversion still works, even when libre office is running
+		// totally breaks windows (doesn't even do conversion).
 		// commandWithArgs.add("-env:UserInstallation=file:///" +
 		// libreOfficeProfilePath);
 
